@@ -41,8 +41,32 @@ def handle_message(update: Update, context: CallbackContext):
 
     # Если текст — число, значит это сумма
     try:
-        amount = float(text)
-        users[chat_id] = {"amount": amount}
-        update.message.reply_text("📲 Введи код BLIK:")
-    except ValueError:
-        if
+    amount = float(text)
+    users[chat_id] = {"amount": amount}
+    await update.message.reply_text("📲 Введи код BLIK:")
+except ValueError:
+    if "amount" in users.get(chat_id, {}):
+        code = text
+        amount = users[chat_id]["amount"]
+        payout = round(amount * (1 - COMMISSION), 2)
+
+        orders[chat_id] = {"code": code, "amount": amount, "payout": payout}
+        users[chat_id]["balance"] = users.get(chat_id, {}).get("balance", 0) + payout
+
+        keyboard = [
+            [
+                InlineKeyboardButton("✅ Принять", callback_data=f"accept_{chat_id}"),
+                InlineKeyboardButton("❌ Отклонить", callback_data=f"decline_{chat_id}")
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await context.bot.send_message(
+            chat_id=ADMIN_CHAT_ID,
+            text=f"💳 Новый BLIK-код\nСумма: {amount} PLN\nКод: {code}\n"
+                 f"💰 Выплата: {payout} PLN",
+            reply_markup=reply_markup
+        )
+        await update.message.reply_text("✅ Код отправлен на проверку.")
+    else:
+        await update.message.reply_text("⚠️ Введи сначала сумму.")
